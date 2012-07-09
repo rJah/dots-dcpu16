@@ -1,0 +1,10 @@
+dots is a simple OS for DCPU 16. It can be built using 0x10c DevKit (http://0x10c-devkit.com/).
+The source uses its macro capabilities heavily.
+
+The project is divided into several sub-projects:
+Core - The kernel proper
+StackCall - Calling convention definitioins
+Hal - Simple Hardware Abstraction Layer
+Std - Math, String, Mem functions
+InitProc - Initializes the Hardware
+
