@@ -1,4 +1,5 @@
-#Introduction
+Introduction
+============
 
 dots is a simple OS for DCPU 16. It can be built using 0x10c DevKit
 (http://0x10c-devkit.com/). The source uses its macro capabilities heavily.
@@ -12,7 +13,8 @@ of these, but for now they are:
 * InitProc - Initializes the Hardware
 
 
-# Project structure
+Project structure
+=================
 
 The solution file is dots-v0.0.3-dcpu16.10csln, which contains all of the
 sub-projects. Each project is located in its seperate sub-folder.
