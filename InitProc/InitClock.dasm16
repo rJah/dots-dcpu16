@@ -1,0 +1,89 @@
+; --------------------------------------------
+; Title:   InitClock
+; Author:  rJah
+; Date:    05/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+
+#define INIT_HWID_GC_LOW				0xb402
+#define INIT_HWID_GC_HIGH				0x12d0
+
+
+#define INIT_MAX_CLOCK_RATE				60
+#define INIT_CLOCK_RATE					60
+
+:Clock_Init
+	_cc_enter(0)
+
+	set [__OS_ClockData_pDeviceHandle], 0
+	
+	Hal_GetDeviceHandleFromIdM( INIT_HWID_GC_LOW, INIT_HWID_GC_HIGH )
+	_ifz( a, .error )
+	set [__OS_ClockData_pDeviceHandle], a
+	
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+; int Clock_Enable(size_t nTicksPerSecond, void* pfHandler);
+:Clock_Enable
+	_cc_enter(2)
+	set a, 0
+	_ifg( _CC_1ST_ARG, INIT_MAX_CLOCK_RATE, .error )
+	_ifz( _CC_1ST_ARG, .error )
+	_ifz( __OS_ClockData_pDeviceHandle, .error )
+	_ifz( _CC_2ND_ARG, .error )
+	
+	
+	Hal_InstallInterruptHandlerM( _CC_2ND_ARG )
+	_ifz( a, .error )
+	
+	set push, a
+	Hal_SetDeviceIntHandleM( [__OS_ClockData_pDeviceHandle], a )
+	_ifn( a, 0, .error )
+	
+	
+	set a, pop
+	_ifz( a, .error )
+	set [x], a
+	
+	Hal_GetInterruptNumM( a )
+	_ifz( a, .error )
+	set [x+1], a
+	
+	; calculate divisor
+	set a, INIT_MAX_CLOCK_RATE
+	div a, _CC_1ST_ARG
+	set _CC_1ST_ARG, a
+	; set clock rate
+	Hal_DeviceCommandM( [__OS_ClockData_pDeviceHandle], 0, _CC_1ST_ARG )
+	_ifn( a, 0, .error )
+	; enable interrupts
+	Hal_DeviceCommandM( [__OS_ClockData_pDeviceHandle], 2, [x+1] )
+	
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+#segment bss
+:__OS_ClockData
+:__OS_ClockData_pDeviceHandle			dat 0x0000
+:__OS_ClockDataEnd
+
+
+
+

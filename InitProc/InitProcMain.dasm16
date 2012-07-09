@@ -1,0 +1,52 @@
+; --------------------------------------------
+; Title:   InitProcMain
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+
+#define INIT_VIDEO_ERROR				1
+#define INIT_CLOCK_ERROR				2
+#define INIT_RTC_ERROR					3
+#define INIT_KBD_ERROR					4
+
+
+:InitProc
+	_cc_enter(0)
+	
+	_scall_0( Video_Init )
+	_ifn( a, 0, .videoInitError )
+	
+	_scall_0( Clock_Init )
+	_ifn( a, 0, .clockInitError )
+	
+	_scall_0( Rtc_Init )
+	_ifn( a, 0, .rtcInitError )
+	
+	_scall_0( Kbd_Init )
+	_ifn( a, 0, .kbdInitError )
+	
+	set a, 0
+	_jump( .end )
+
+.videoInitError
+	set a, INIT_VIDEO_ERROR
+	_jump( .end )
+.clockInitError
+	set a, INIT_CLOCK_ERROR
+	_jump( .end )
+.rtcInitError
+	set a, INIT_RTC_ERROR
+	_jump( .end )
+.kbdInitError
+	set a, INIT_KBD_ERROR
+	_jump( .end )
+.end
+	_cc_leave()
+
+
+
+
+
+

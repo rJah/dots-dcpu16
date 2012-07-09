@@ -1,0 +1,21 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project version="1.7.5" type="code">
+  <name>Hal</name>
+  <properties>
+    <property name="code.generateBinaryOutput">true</property>
+    <property name="code.binaryOutputFilename">Hal.bin</property>
+    <property name="code.generateHexOutput">false</property>
+    <property name="code.hexOutputFilename">Hal.hex</property>
+    <property name="code.setFirstFile">false</property>
+  </properties>
+  <references>
+    <project>StackCall</project>
+    <project>Std</project>
+  </references>
+  <files>
+    <file path="HalMain.dasm16" />
+    <file path="HalRawMalloc.dasm16" />
+    <file path="HalDevices.dasm16" />
+    <file path="HalInterrupts.dasm16" />
+  </files>
+</project>

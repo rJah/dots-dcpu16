@@ -1,0 +1,185 @@
+; --------------------------------------------
+; Title:   StackCall
+; Author:  rJah
+; Date:    03/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This file defines commonly used macros for making
+; function calls (stackcall with the _scall_n macros),
+; initializing and cleaning up of the callee's stack
+; frame and accessing arguments and locals.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Define offset from the base pointer for the return 
+; address on the stack.
+#define _CC_RET_OFFSET		5
+; Define positions of arguments on the stack,
+; relative to base pointer.
+; 6 should be enough, 8 should be plenty.
+#define _CC_1ST_ARG			[y+_CC_RET_OFFSET+1]
+#define _CC_2ND_ARG			[y+_CC_RET_OFFSET+2]
+#define _CC_3RD_ARG			[y+_CC_RET_OFFSET+3]
+#define _CC_4TH_ARG			[y+_CC_RET_OFFSET+4]
+#define _CC_5TH_ARG			[y+_CC_RET_OFFSET+5]
+#define _CC_6TH_ARG			[y+_CC_RET_OFFSET+6]
+#define _CC_7TH_ARG			[y+_CC_RET_OFFSET+7]
+#define _CC_8TH_ARG			[y+_CC_RET_OFFSET+8]
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This is the callee-stack-init macro. It pushes GP
+; registers X, Y, Z, I, J, reserves 'count' words on the
+; stack for local variables and stores the start of the
+; locals (at [SP]) in X.
+; Arguments are accesible from [Y+_CC_RET_OFFSET+1] onward,
+; locals from [x] to [X+count] (or [SP] to [SP+count]).
+; The function body must not modify Y. X can be overwritten,
+; but the user must use other means for accessing local
+; variables.
+#macro _cc_enter(count) {
+	set push, x
+	set push, y
+	set push, z
+	set push, i
+	set push, j
+	set y, sp
+	sub sp, count
+	set x, sp
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This is the callee-stack-cleanup macro. It restores
+; the callers stack frame and returns.
+#macro _cc_leave() {
+	set sp, y
+	set j, pop
+	set i, pop
+	set z, pop
+	set y, pop
+	set x, pop
+	set pc, pop
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with no arguments.
+#macro _scall_0(dest) {
+	jsr dest
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 1 argument.
+#macro _scall_1(dest, a1) {
+	set push, a1
+	jsr dest
+	add sp, 1
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 2 arguments.
+#macro _scall_2(dest, a1, a2) {
+	set push, a2
+	set push, a1
+	jsr dest
+	add sp, 2
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 3 arguments.
+#macro _scall_3(dest, a1, a2, a3) {
+	set push, a3
+	set push, a2
+	set push, a1
+	jsr dest
+	add sp, 3
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 4 arguments.
+#macro _scall_4(dest, a1, a2, a3, a4) {
+	set push, a4
+	set push, a3
+	set push, a2
+	set push, a1
+	jsr dest
+	add sp, 4
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 5 arguments.
+#macro _scall_5(dest, a1, a2, a3, a4, a5) {
+	set push, a5
+	set push, a4
+	set push, a3
+	set push, a2
+	set push, a1
+	jsr dest
+	add sp, 5
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Stackcalls 'dest' with 6 arguments.
+#macro _scall_6(dest, a1, a2, a3, a4, a5, a6) {
+	set push, a6
+	set push, a5
+	set push, a4
+	set push, a3
+	set push, a2
+	set push, a1
+	jsr dest
+	add sp, 6
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Jumps to 'dest'.
+#macro _jump(dest) {
+	set pc, dest
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+

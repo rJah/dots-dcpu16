@@ -1,0 +1,20 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project version="1.7.5" type="code">
+  <name>Core</name>
+  <properties>
+    <property name="code.generateBinaryOutput">true</property>
+    <property name="code.binaryOutputFilename">Core.bin</property>
+    <property name="code.generateHexOutput">false</property>
+    <property name="code.hexOutputFilename">Core.hex</property>
+    <property name="code.setFirstFile">false</property>
+  </properties>
+  <references>
+    <project>StackCall</project>
+    <project>Std</project>
+    <project>Hal</project>
+    <project>InitProc</project>
+  </references>
+  <files>
+    <file path="CoreMain.dasm16" />
+  </files>
+</project>

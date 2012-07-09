@@ -1,0 +1,23 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<project version="1.7.5" type="code">
+  <name>InitProc</name>
+  <properties>
+    <property name="code.generateBinaryOutput">true</property>
+    <property name="code.binaryOutputFilename">InitProc.bin</property>
+    <property name="code.generateHexOutput">false</property>
+    <property name="code.hexOutputFilename">InitProc.hex</property>
+    <property name="code.setFirstFile">false</property>
+  </properties>
+  <references>
+    <project>StackCall</project>
+    <project>Std</project>
+    <project>Hal</project>
+  </references>
+  <files>
+    <file path="InitProcMain.dasm16" />
+    <file path="InitVideo.dasm16" />
+    <file path="InitClock.dasm16" />
+    <file path="InitRtc.dasm16" />
+    <file path="InitKbd.dasm16" />
+  </files>
+</project>

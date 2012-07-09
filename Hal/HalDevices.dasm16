@@ -1,0 +1,472 @@
+; --------------------------------------------
+; Title:   HalDevices
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; struct __OS_HalDeviceHandle
+;;		size_t nIdLow
+;;		size_t nIdHigh
+;;		size_t nRawHandle
+;;		size_t nIntNum
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#define __OS_HalDeviceHandle_Sizeof				4
+;; Fields
+#define __OS_HalDeviceHandle_nIdLow				0
+#define __OS_HalDeviceHandle_nIdHigh			1
+#define __OS_HalDeviceHandle_nRawHandle			2
+#define __OS_HalDeviceHandle_pIntHandle			3
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; struct __OS_GPRegs
+;;		size_t nA
+;;		size_t nB
+;;		size_t nC
+;;		size_t nX
+;;		size_t nY
+;;		size_t nZ
+;;		size_t nI
+;;		size_t nJ
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#define __OS_GPRegs_Sizeof						8
+;; Fields
+#define __OS_GPRegs_nA							0
+#define __OS_GPRegs_nB							1
+#define __OS_GPRegs_nC							2
+#define __OS_GPRegs_nX							3
+#define __OS_GPRegs_nY							4
+#define __OS_GPRegs_nZ							5
+#define __OS_GPRegs_nI							6
+#define __OS_GPRegs_nJ							7
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;	Hal_GetDeviceCountM				size_t Hal_GetDeviceCount();
+;	Hal_GetDeviceHandleFromIdM		devhandle_t Hal_GetDeviceHandleFromId(size_t nIdLow, size_t nIdHigh);
+;	Hal_DeviceCommandM				size_t Hal_DeviceCommand(devhandle_t hDevice, size_t nA, size_t nB);
+;	Hal_ClearDeviceIntHandleM		int Hal_ClearDeviceIntHandle(devhandle_t hDev, inthandle_t hInt);
+;	Hal_SetDeviceIntHandleM			int Hal_SetDeviceIntHandle(devhandle_t hDev, inthandle_t hInt);
+;	Hal_GetDeviceIntHandleM			devhandle_t Hal_GetDeviceIntHandle(devhandle_t hDev);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Hal_GetDeviceCountM() {
+	_scall_0( Hal_GetDeviceCount )
+}
+
+#macro Hal_GetDeviceHandleFromIdM(nIdLow, nIdHigh) {
+	_scall_2( Hal_GetDeviceHandleFromId, nIdLow, nIdHigh )
+}
+
+#macro Hal_DeviceCommandM(hDevice, nA, nB) {
+	_scall_3( Hal_DeviceCommand, hDevice, nA, nB )
+}
+#macro Hal_DeviceCommandExM(hDevice, nA, nB, nC, psRegs) {
+	_scall_5( Hal_DeviceCommandEx, hDevice, nA, nB, nC, psRegs )
+}
+
+#macro Hal_SetDeviceIntHandleM(hDevice, hInt) {
+	_scall_2( Hal_SetDeviceIntHandle, hDevice, hInt )
+}
+
+#macro Hal_ClearDeviceIntHandleM(hDevice, hInt) {
+	_scall_2( Hal_ClearDeviceIntHandle, hDevice, hInt )
+}
+
+#macro Hal_GetDeviceIntHandleM(hDevice) {
+	_scall_1( Hal_GetDeviceIntHandle, hDevice )
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_QueryDevices
+	; [x] = temp device count
+	; [x+1] = temp buffer pointer
+	_cc_enter(2)
+	
+	; clear data
+	set [__OS_HalDevicesData_nCount], 0
+	set [__OS_HalDevicesData_pnHandles], 0
+	; get device count
+	hwn a
+	_ifz( a, .end )
+	add a, 1						; we add 1 to the device number to get the raw handle. this allows us to use 0 as a null device.
+	set [x], a
+	
+	; Allocate handle buffer
+	mul a, __OS_HalDeviceHandle_Sizeof
+	RawMallocM( a )
+	; Check null ptr
+	_ifz( a, .error )
+	; store temp pointer now
+	set [x+1], a
+	
+	; store
+	set [__OS_HalDevicesData_nCount], [x]			; device count
+	set [__OS_HalDevicesData_pnHandles], [x+1]		; handle buffer
+	
+	; Init null device
+	Mem_ZeroM( a, __OS_HalDeviceHandle_Sizeof )
+	add [x+1], __OS_HalDeviceHandle_Sizeof
+	
+	; init loop
+	set i, 1
+	; Query devices
+.loop
+	_ifge(i, [x], .loopEnd)
+	; Query device
+	set c, i
+	sub c, 1
+	
+	set push, x
+	set push, y
+	hwq c
+	set y, pop
+	set x, pop
+	
+	set c, [x+1]
+	; save info
+	set [c+__OS_HalDeviceHandle_nIdLow], a
+	set [c+__OS_HalDeviceHandle_nIdHigh], b
+	set [c+__OS_HalDeviceHandle_nRawHandle], i
+	set [c+__OS_HalDeviceHandle_pIntHandle], 0
+	
+	add c, __OS_HalDeviceHandle_Sizeof
+	set [x+1], c
+	
+	add i, 1
+	_jump( .loop )
+
+.loopEnd
+	set a, 0
+	_jump( .end )
+
+.error
+	set a, 1
+	
+.end
+	_cc_leave()
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	size_t Hal_GetDeviceCount();
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_GetDeviceCount
+	set a, [__OS_HalDevicesData_nCount]
+	set pc, pop
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;	devhandle_t Hal_GetDeviceHandleFromId(size_t nIdLow, size_t nIdHigh);
+;;
+;; 	Get handle for device with specified ID.
+;;	Zero if no such device.
+;;
+;;	Zero is also the null device handle.
+;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_GetDeviceHandleFromId
+	_cc_enter(0)
+	set a, _CC_1ST_ARG								; low
+	set b, _CC_2ND_ARG								; high
+	set i, 0										; count
+	set c, [__OS_HalDevicesData_pnHandles]			; handle pointer
+	
+	; Loop devices
+:loop
+	_ife(i, [__OS_HalDevicesData_nCount], .loopEnd)
+	; compare ids low
+	_ifn([c+__OS_HalDeviceHandle_nIdLow], a, .loopInc)
+	; compare ids high
+	_ifn([c+__OS_HalDeviceHandle_nIdHigh], b, .loopInc)
+	_jump( .equal )
+	
+	; increment and reiterate
+.loopInc
+	add i, 1
+	add c, __OS_HalDeviceHandle_Sizeof
+	_jump( .loop )
+	
+	; not found, return 0
+.loopEnd
+	set a, 0
+	_jump( .end )
+	; found it, at c
+.equal
+	set a, c
+	
+.end
+	_cc_leave()
+	
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	int Hal_DeviceCommand(devhandle_t hDevice, size_t nA, size_t nB);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_DeviceCommand
+	_cc_enter(0)
+	set a, 0
+	_ifz( _CC_1ST_ARG, .end )
+	
+	; Check bounds
+	set a, [__OS_HalDevicesData_nCount]
+	sub a, 1
+	mul a, __OS_HalDeviceHandle_Sizeof
+	add a, [__OS_HalDevicesData_pnHandles]
+	_ifg( _CC_1ST_ARG, a, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalDevicesData_pnHandles], .error )
+	set a, 0
+	
+	; Get device number
+	set i, _CC_1ST_ARG
+	set j, [i+__OS_HalDeviceHandle_nRawHandle]
+	_ifz( j, .end )
+	
+	sub j, 1
+	set a, _CC_2ND_ARG
+	set b, _CC_3RD_ARG
+	hwi j
+	
+	set a, 0
+	_jump( .end )
+
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;	int Hal_DeviceCommandEx(devhandle_t hDevice, size_t nA, size_t nB, size_t nC, struct __OS_GPRegs* psRegsOut);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_DeviceCommandEx
+	_cc_enter(1)
+	set a, 0
+	_ifz( _CC_1ST_ARG, .end )
+	
+	; Check bounds
+	set a, [__OS_HalDevicesData_nCount]
+	sub a, 1
+	mul a, __OS_HalDeviceHandle_Sizeof
+	add a, [__OS_HalDevicesData_pnHandles]
+	_ifg( _CC_1ST_ARG, a, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalDevicesData_pnHandles], .error )
+	set a, 0
+	
+	; Get device number
+	set i, _CC_1ST_ARG
+	set j, [i+__OS_HalDeviceHandle_nRawHandle]
+	_ifz( j, .end )
+	
+	set push, x
+	set push, y
+	
+	sub j, 1
+	set a, _CC_2ND_ARG
+	set b, _CC_3RD_ARG
+	set c, _CC_4TH_ARG
+	hwi j
+	
+	; save x
+	set push, x
+	set x, [sp+2]
+	set [x], _CC_5TH_ARG
+	set x, [x]
+	set [x+__OS_GPRegs_nX], [sp]
+	add sp, 1
+	; save rest
+	set [x+__OS_GPRegs_nY], y
+	set [x+__OS_GPRegs_nZ], z
+	set [x+__OS_GPRegs_nA], a
+	set [x+__OS_GPRegs_nB], b
+	set [x+__OS_GPRegs_nC], c
+	set [x+__OS_GPRegs_nI], i
+	set [x+__OS_GPRegs_nJ], j
+	
+	set y, pop
+	set x, pop
+	
+	
+	set a, 0
+	_jump( .end )
+
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; int Hal_SetDeviceIntHandle(devhandle_t hDev, inthandle_t hInt)
+:Hal_SetDeviceIntHandle
+	_cc_enter(0)
+	set a, 0
+	_ifz( _CC_1ST_ARG, .end )
+	_ifz( _CC_2ND_ARG, .error )
+	
+	
+	; Check bounds
+	set a, [__OS_HalDevicesData_nCount]
+	sub a, 1
+	mul a, __OS_HalDeviceHandle_Sizeof
+	add a, [__OS_HalDevicesData_pnHandles]
+	_ifg( _CC_1ST_ARG, a, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalDevicesData_pnHandles], .error )
+	
+	set a, _CC_1ST_ARG
+	_ifn( [a+__OS_HalDeviceHandle_pIntHandle], 0, .error )
+	
+	set [a+__OS_HalDeviceHandle_pIntHandle], _CC_2ND_ARG 
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+; int Hal_ClearDeviceIntHandle(devhandle_t hDev, inthandle_t hInt)
+:Hal_ClearDeviceIntHandle
+	_cc_enter(0)
+	set a, 0
+	_ifz( _CC_1ST_ARG, .end )
+	
+	; Check bounds
+	set a, [__OS_HalDevicesData_nCount]
+	sub a, 1
+	mul a, __OS_HalDeviceHandle_Sizeof
+	add a, [__OS_HalDevicesData_pnHandles]
+	_ifg( _CC_1ST_ARG, a, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalDevicesData_pnHandles], .error )
+	
+	set a, _CC_1ST_ARG
+	_ifz( [a+__OS_HalDeviceHandle_pIntHandle], .error )
+	
+	_ifn( [a+__OS_HalDeviceHandle_pIntHandle], _CC_2ND_ARG, .error )
+	
+	set [a+__OS_HalDeviceHandle_pIntHandle], 0
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+; devhandle_t Hal_GetDeviceIntHandle(devhandle_t hDev)
+:Hal_GetDeviceIntHandle
+	_cc_enter(0)
+	set a, 0
+	_ifz( _CC_1ST_ARG, .end )
+	
+	; Check bounds
+	set a, [__OS_HalDevicesData_nCount]
+	sub a, 1
+	mul a, __OS_HalDeviceHandle_Sizeof
+	add a, [__OS_HalDevicesData_pnHandles]
+	_ifg( _CC_1ST_ARG, a, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalDevicesData_pnHandles], .error )
+	
+	set b, _CC_1ST_ARG
+	set a, [b+__OS_HalDeviceHandle_pIntHandle]
+	
+	_jump( .end )
+	
+.error
+	set a, 0
+.end
+	_cc_leave()
+
+
+
+
+
+
+#segment bss
+:__OS_HalDevicesData
+:__OS_HalDevicesData_nCount			dat 0x0000
+:__OS_HalDevicesData_pnHandles		dat 0x0000
+:__OS_HalDevicesDataEnd
+
+
+
+

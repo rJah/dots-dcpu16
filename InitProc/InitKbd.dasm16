@@ -1,0 +1,202 @@
+; --------------------------------------------
+; Title:   InitKbd
+; Author:  rJah
+; Date:    08/07/2012
+; Version: 
+; --------------------------------------------
+
+
+#define INIT_HWID_KBD_LOW			0x7406
+#define INIT_HWID_KBD_HIGH			0x30cf
+
+
+
+
+
+
+
+
+
+
+#macro Kbd_GetKeyM() {
+	_scall_0( Kbd_GetKey )
+}
+
+
+#macro Kbd_WaitKeyM() {
+	_scall_0( Kbd_WaitKey )
+}
+
+
+
+
+
+
+
+
+
+
+
+; int Kbd_Init(void* pfHandler);
+:Kbd_Init
+	_cc_enter(0)
+	Hal_GetDeviceHandleFromIdM( INIT_HWID_KBD_LOW, INIT_HWID_KBD_HIGH )
+	_ife( a, NULL, .useNullDevice )
+	
+	set [__OS_KbdData_pDeviceHandle], a
+	set [__OS_KbdData_pIntHandle], 0
+	
+	set a, 0
+	_jump( .end )
+
+.useNullDevice
+	set [__OS_KbdData_pDeviceHandle], 0
+	set [__OS_KbdData_pIntHandle], 0
+	set a, 1
+
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+; int Kbd_Enable(void* pfHandler)
+:Kbd_Enable
+	_cc_enter(2)
+	
+	_ifz( __OS_KbdData_pDeviceHandle, .error )
+	_ifz( _CC_1ST_ARG, .error )
+	
+	Hal_InstallInterruptHandlerM( _CC_1ST_ARG )
+	_ifz( a, .error )
+	
+	set push, a
+	Hal_SetDeviceIntHandleM( [__OS_KbdData_pDeviceHandle], a )
+	_ifn( a, 0, .error )
+	
+	set a, pop
+	_ifz( a, .error )
+	set [x], a
+	
+	Hal_GetInterruptNumM( a )
+	_ifz( a, .error )
+	set [x+1], a
+	
+	; enable interrupts
+	Hal_DeviceCommandM( [__OS_KbdData_pDeviceHandle], 3, [x+1] )
+	
+	set a, 1
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+
+:Kbd_GetKey
+	_cc_enter(__OS_GPRegs_Sizeof)
+	
+	_ifz( [__OS_KbdData_pDeviceHandle], .error )
+	
+	Hal_DeviceCommandExM( [__OS_KbdData_pDeviceHandle], 1, 0, 0, x )
+	_ifn( a, 0, .error )
+	
+	set a, [x+__OS_GPRegs_nC]
+	_jump( .end )
+	
+.error
+	set a, 0
+.end
+	_cc_leave()
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+:Kbd_WaitKey
+	_cc_enter(__OS_GPRegs_Sizeof)
+	
+	_ifz( [__OS_KbdData_pDeviceHandle], .error )
+	
+.loop
+	Hal_DeviceCommandExM( [__OS_KbdData_pDeviceHandle], 1, 0, 0, x )
+	_ifn( a, 0, .error )
+	
+	set a, [x+__OS_GPRegs_nC]
+	_ifn( a, 0, .end )
+	
+	_jump( .loop )
+	
+.error
+	set a, 0
+.end
+	_cc_leave()
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+
+
+
+
+#segment bss
+:__OS_KbdData
+:__OS_KbdData_pDeviceHandle			dat 0x0000
+:__OS_KbdData_pIntHandle			dat 0x0000
+:__OS_KbdDataEnd
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,109 @@
+; --------------------------------------------
+; Title:   InitRtc
+; Author:  rJah
+; Date:    08/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;	Rtc_GetTimeM						int Rtc_GetTime(struct __OS_Time* psTime);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Rtc_GetTimeM(psTime) {
+	_scall_1( Rtc_GetTime, psTime )
+}
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+
+
+
+
+
+
+
+
+#define INIT_HWID_FRTC_LOW				0xC7ac
+#define INIT_HWID_FRTC_HIGH				0x4748
+
+
+
+
+#define __OS_Time_Sizeof			3
+
+#define __OS_Time_nHour				0
+#define __OS_Time_nMinute			1
+#define __OS_Time_nSecond			2
+
+
+
+:Rtc_Init
+	_cc_enter(0)
+	
+	set [__OS_RtcData_pDeviceHandle], 0
+	
+	Hal_GetDeviceHandleFromIdM( INIT_HWID_FRTC_LOW, INIT_HWID_FRTC_HIGH )
+	_ifz( a, .useNullDevice )
+	set [__OS_RtcData_pDeviceHandle], a
+	
+	set a, 0
+	_jump( .end )
+	
+.useNullDevice
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+; int Rtc_GetTime(struct __OS_Time* psTime);
+:Rtc_GetTime
+	_cc_enter(__OS_GPRegs_Sizeof)
+	_ifz([__OS_RtcData_pDeviceHandle], .error )
+	
+	Hal_DeviceCommandExM( [__OS_RtcData_pDeviceHandle], 0, 0, 0, x )
+	_ifn( a, 0, .error )
+	
+	set a, _CC_1ST_ARG
+	set [a+__OS_Time_nHour], [x+__OS_GPRegs_nA]
+	set [a+__OS_Time_nMinute], [x+__OS_GPRegs_nB]
+	set [a+__OS_Time_nSecond], [x+__OS_GPRegs_nC]
+	
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+#segment bss
+:__OS_RtcData
+:__OS_RtcData_pDeviceHandle				dat 0x0000
+:__OS_RtcDataEnd
+
+
+

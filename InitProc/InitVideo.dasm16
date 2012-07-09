@@ -1,0 +1,151 @@
+; --------------------------------------------
+; Title:   InitVideo
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+;; LEM Display
+#define INIT_HWID_LEM_LOW				0xf615
+#define INIT_HWID_LEM_HIGH				0x7349
+
+
+
+
+
+
+
+
+#define INIT_SCREEN_MEM_SIZE			386
+#define INIT_SCREEN_WIDTH				32
+#define INIT_SCREEN_HEIGHT				12
+
+
+
+
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;	Video_ClearM						void Video_Clear();
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Video_ClearM() {
+	_scall_0( Video_Clear )
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+; int Video_Init();
+:Video_Init
+	_cc_enter(2)
+	set a, 0
+	set [__OS_VideoData_pDeviceHandle], 0
+	set [__OS_VideoData_pScreenBuffer], 0
+	set [__OS_VideoData_nAttrib], 0
+	set [__OS_VideoData_nPos], 0
+	
+	Hal_GetDeviceHandleFromIdM( INIT_HWID_LEM_LOW, INIT_HWID_LEM_HIGH )
+	_ifz(a, .end)
+	set [x], a
+	
+	; Allocate buffer
+	RawMallocM( INIT_SCREEN_MEM_SIZE )
+	_ifz( a, .error )
+	set [x+1], a
+	
+	; we're ok
+	set [__OS_VideoData_pDeviceHandle], [x]
+	set [__OS_VideoData_pScreenBuffer], [x+1]
+	set [__OS_VideoData_nAttrib], 0xf000
+	set [__OS_VideoData_nPos], 0x0000
+	; set buffer
+	Hal_DeviceCommandM( [x], 0, [x+1] )
+	
+	Video_ClearM()
+	set a, 0
+	_jump( .end )
+	
+.error
+	set a, 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+:foo dat 0x0020
+
+; void Video_Clear();
+:Video_Clear
+	_cc_enter(0)
+	
+	_ifz( [__OS_VideoData_pDeviceHandle], .end )
+	_ifz( [__OS_VideoData_pScreenBuffer], .end )
+	set a, 0x0020
+	set a, [foo]
+	bor a, [__OS_VideoData_nAttrib]
+	Mem_SetM( [__OS_VideoData_pScreenBuffer], a, INIT_SCREEN_MEM_SIZE )
+	add [foo], 1
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+#segment bss
+:__OS_VideoData
+:__OS_VideoData_pDeviceHandle			dat 0x0000
+:__OS_VideoData_pScreenBuffer			dat 0x0000
+:__OS_VideoData_nAttrib					dat 0x0000
+:__OS_VideoData_nPos					dat 0x0000
+:__OS_VideoDataEnd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,67 @@
+; --------------------------------------------
+; Title:   HalMain
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+#define _ERR_HAL_INIT_QDEVICES						1
+#define _ERR_HAL_INIT_INTERRUPTS					2
+
+
+
+
+#define HAL_INIT_EXTRA_INTS							8
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Hal_InitM() {
+	_scall_0( Hal_Init )
+}
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:Hal_Init
+	_cc_enter(0)
+	set a, 0
+	; Create device table
+	_scall_0( Hal_QueryDevices )
+	_ifn( a, 0, .queryDevicesError )
+	
+	; Create interrupt table
+	_scall_1( Hal_InitInterrupts, HAL_INIT_EXTRA_INTS )
+	_ifn( a, 0, .initInterruptsError )
+	
+	_jump( .end )
+	
+.queryDevicesError
+	set a, _ERR_HAL_INIT_QDEVICES
+	_jump( .end )
+	
+.initInterruptsError
+	set a, _ERR_HAL_INIT_INTERRUPTS
+	_jump( .end )
+	
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+

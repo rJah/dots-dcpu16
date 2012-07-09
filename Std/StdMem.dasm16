@@ -1,0 +1,96 @@
+; --------------------------------------------
+; Title:   StdMem
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;	Mem_CopyM			size_t Mem_Copy(void* pDest, void* pSrc, size_t nCount);
+;	Mem_SetM			size_t Mem_Set(void* pDest, size_t nVal, size_t nCount);
+;	Mem_ZeroM			size_t Mem_Zero(void* pDest, size_t nCount);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Mem_CopyM(pDest, pSrc, nCount) {
+	_scall_3( Mem_Copy, pDest, pSrc, nCount )
+}
+
+#macro Mem_SetM(pDest, nVal, nCount) {
+	_scall_3( Mem_Set, pDest, nVal, nCount )
+}
+
+#macro Mem_ZeroM(pDest, nCount) {
+	_scall_2( Mem_Zero, pDest, nCount )
+}
+
+
+
+
+
+
+
+
+
+
+
+; size_t Mem_Copy(void* pDest, void* pSrc, size_t nCount)
+:Mem_Copy
+	_cc_enter(0)
+	set i, 0
+	set a, _CC_1ST_ARG
+	set b, _CC_2ND_ARG
+	
+.loop
+	_ife( i, _CC_3RD_ARG, .loopEnd )
+	set [a], [b]
+	add a, 1
+	add b, 1
+	add i, 1
+	set pc, .loop
+	
+.loopEnd
+	set a, i
+	_cc_leave()
+
+
+
+
+
+
+
+
+; size_t Mem_Set(void* pDest, size_t nVal, size_t nCount)
+:Mem_Set
+	_cc_enter(0)
+	set i, 0
+	set a, _CC_1ST_ARG
+	set b, _CC_2ND_ARG
+	
+.loop
+	_ife( i, _CC_3RD_ARG, .loopEnd )
+	set [a], b
+	add a, 1
+	add i, 1
+	set pc, .loop
+	
+.loopEnd
+	set a, i
+	_cc_leave()
+
+
+
+
+
+
+; size_t Mem_Zero(void* pDest, size_t nCount)
+:Mem_Zero
+	_cc_enter(0)
+	_scall_3( Mem_Set, _CC_1ST_ARG, 0, _CC_2ND_ARG )
+	_cc_leave()
+
+
+

@@ -1,0 +1,141 @@
+; --------------------------------------------
+; Title:   CoreMain
+; Author:  rJah
+; Date:    03/07/2012
+; Version: 
+; --------------------------------------------
+
+; Bottom of the kernel stack at boot
+#define _OS_STACK_BASE				0x4000
+
+
+
+
+; Errors
+; There was an error returned from Hal_Init
+#define _ERR_OS_ENTRY_HAL					1
+; There was an error returned from InitProc
+#define _ERR_OS_ENTRY_IPROC					2
+; There was an error returned from Runtime_Init
+#define _ERR_OS_ENTRY_RT					3
+; There was an error returned from Shell_Run
+#define _ERR_OS_ENTRY_SHELL					4
+
+
+
+
+
+
+
+#segment boot
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; __no_return void CoreEntry();
+;
+; This is the entry point for the OS. It sets up the kernel
+; stack at _OS_STACK_BASE.
+; Calls Hal_Init, InitProc, Runtime_Init and Shell_Run.
+; If any of these return an error it is pushed on the stack
+; and A is set to the error code describing which function
+; caused the error.
+;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:CoreEntry
+	; Set up kernel stack
+	set sp, _OS_STACK_BASE
+	
+	; Init RawMalloc
+	_scall_0( RawMalloc_Init )
+	
+	; Init HAL and handle any error
+	Hal_InitM()
+	_ifn( a, 0, .halError )
+	
+	; Run InitProc and handle any error
+	_scall_0( InitProc )
+	_ifn( a, 0, .initProcError )
+	
+	;_scall_2( Clock_Enable, 0, Core_ClockCallback )
+	;_scall_1( Kbd_Enable, Core_KbdCallback )
+	;
+	
+	Hal_EnableInterruptsM()
+	
+	
+	; Init runtime and handle any error
+	;_scall_0( Runtime_Init )
+	;_ifn( a, 0, .rtError )
+	
+	; Call shell and exit on return
+	;_scall_0( Shell_Run )
+	;_ifn( a, 0, .shellError )
+	
+	_jump(.end)
+
+.halError
+	set push, a						; push error returned from Hal_Init
+	set a, _ERR_OS_ENTRY_HAL
+	_jump(Halt)
+	
+.initProcError
+	set push, a						; push error returned from InitProc
+	set a, _ERR_OS_ENTRY_IPROC
+	_jump(Halt)
+	
+.rtError
+	set push, a						; push error returned from Runtime_Init
+	set a, _ERR_OS_ENTRY_RT
+	_jump(Halt)
+	
+.shellError
+	set push, a						; push error returned from Shell_Run
+	set a, _ERR_OS_ENTRY_SHELL
+	_jump(Halt)
+	
+.end
+
+:Halt
+	_jump(Halt)
+
+
+
+
+
+
+
+
+
+
+:Core_KbdCallback
+	_cc_enter(0)
+	;Video_ClearM()
+	Kbd_GetKeyM()
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+:Core_ClockCallback
+	_cc_enter(0)
+	;Video_ClearM()
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+

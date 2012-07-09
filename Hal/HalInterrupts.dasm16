@@ -1,0 +1,268 @@
+; --------------------------------------------
+; Title:   HalInterrupts
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+
+#define __OS_IntHandle_Sizeof				2
+
+#define __OS_IntHandle_pfHandler			0
+#define __OS_IntHandle_nIntNumber			1
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+; Hal_InstallInterruptHandlerM			inthandle_t Hal_InstallInterruptHandler(void* pfHandler);
+; Hal_UninstallInterruptHandlerM		inthandle_t Hal_UninstallInterruptHandler(inthandle_t hInt);
+; Hal_GetInterruptNumM					size_t Hal_GetInterruptNum(inthandle_t hInt);
+; Hal_EnableInterruptsM					void Hal_EnableInterrupts();
+; Hal_DisableInterruptsM				void Hal_DisableInterrupts();
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro Hal_InstallInterruptHandlerM(pfHandler) {
+	_scall_1( Hal_InstallInterruptHandler, pfHandler )
+}
+#macro Hal_UninstallInterruptHandlerM(hInt) {
+	_scall_1( Hal_UninstallInterruptHandler, pfHandler )
+}
+#macro Hal_GetInterruptNumM(hInt) {
+	_scall_1( Hal_GetInterruptNum, hInt )
+}
+#macro Hal_EnableInterruptsM() {
+	_scall_0( Hal_EnableInterrupts )
+}
+#macro Hal_DisableInterruptsM() {
+	_scall_0( Hal_DisableInterrupts )
+}
+
+
+; int Hal_InitInterrupts(size_t nExtraHandlers);
+:Hal_InitInterrupts
+	_cc_enter(0)
+	
+	; clear data
+	set [__OS_HalIntInfo_pnIntVector], 0
+	set [__OS_HalIntInfo_nIntNum], 0
+	
+	; we expect Hal_QueryDevices to be executed before this point
+	Hal_GetDeviceCountM()
+	
+	set i, a					; preserve buffer size
+	add i, 1					; add 1 for null handler
+	add i, _CC_1ST_ARG			; add extra handlers
+	; save interrupt count
+	set [__OS_HalIntInfo_nIntNum], i
+	
+	mul i, __OS_IntHandle_Sizeof	; get buffer size
+	RawMallocM( i )
+	; Check error
+	_ife(a, 0, .error)
+	
+	set j, a					; preserve buffer ptr
+	
+	Mem_ZeroM( j, i )
+	
+	; save interrupt vector
+	set [__OS_HalIntInfo_pnIntVector], j
+	
+	; return 0
+	set a, 0
+	set pc, .end
+	
+.error
+	set a, 1
+
+.end
+	; install interrupt handler
+	;_scall_0( Hal_EnableInterrupts )
+	_cc_leave()
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+:_Hal_MasterIntHandler
+	; Sanity checks
+	_ife( [__OS_HalIntInfo_nIntNum], 0, .end )
+	_ifl( [__OS_HalIntInfo_nIntNum], a, .end)
+	_ife( [__OS_HalIntInfo_nIntNum], a, .end)
+	_ife( [__OS_HalIntInfo_pnIntVector], NULL, .end)
+	
+	; Get handle offset
+	set b, a
+	mul b, __OS_IntHandle_Sizeof
+	add b, [__OS_HalIntInfo_pnIntVector]
+	; is handler installed?
+	_ife( [b+__OS_IntHandle_pfHandler], NULL, .end )
+	
+	jsr [b+__OS_IntHandle_pfHandler]
+	
+.end
+	rfi a
+	
+
+
+
+
+
+
+	
+	
+	
+; inthandle_t Hal_InstallInterruptHandler(void* pfHandler);
+:Hal_InstallInterruptHandler
+	_cc_enter(0)
+	
+	_ifz( [__OS_HalIntInfo_nIntNum], .loopEnd )
+	set i, 1
+	
+.loop
+	_ifge(i, [__OS_HalIntInfo_nIntNum], .loopEnd)
+	
+	set a, i
+	mul a, __OS_IntHandle_Sizeof
+	add a, [__OS_HalIntInfo_pnIntVector]
+	
+	_ifz( [a+__OS_IntHandle_pfHandler], .foundIt)
+	
+	add i, 1
+	set pc, .loop
+
+.loopEnd
+	set a, 0
+	_jump( .end )
+
+.foundIt
+	set [a+__OS_IntHandle_pfHandler], _CC_1ST_ARG
+	set [a+__OS_IntHandle_nIntNumber], i
+.end
+	_cc_leave()
+
+
+
+
+
+
+
+; inthandle_t Hal_UninstallInterruptHandler(inthandle_t hInt)
+:Hal_UninstallInterruptHandler
+	_cc_enter(0)
+	set a, 0
+	
+	_ifz( _CC_1ST_ARG, .end )
+	_ifz( [__OS_HalIntInfo_nIntNum], .end )
+	_ifz( [__OS_HalIntInfo_pnIntVector], .end )
+	; Check bounds
+	set b, [__OS_HalIntInfo_nIntNum]
+	sub b, 1
+	mul b, __OS_IntHandle_Sizeof
+	add b, [__OS_HalIntInfo_pnIntVector]
+	_ifg( _CC_1ST_ARG, b, .end )
+	_ifl( _CC_1ST_ARG, [__OS_HalIntInfo_pnIntVector], .end )
+	
+	
+	set b, _CC_1ST_ARG
+	mul b, __OS_IntHandle_Sizeof
+	add b, [__OS_HalIntInfo_pnIntVector]
+	
+	set a, [b+__OS_IntHandle_pfHandler]		; return previous value
+	set [b+__OS_IntHandle_pfHandler], 0
+	
+.end
+	_cc_leave()
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+; size_t Hal_GetInterruptNum(inthandle_t hInt)
+:Hal_GetInterruptNum
+	_cc_enter(0)
+	
+	_ifz( _CC_1ST_ARG, .error )
+	_ifz( [__OS_HalIntInfo_nIntNum], .error )
+	_ifz( [__OS_HalIntInfo_pnIntVector], .error )
+	; Check bounds
+	set b, [__OS_HalIntInfo_nIntNum]
+	sub b, 1
+	mul b, __OS_IntHandle_Sizeof
+	add b, [__OS_HalIntInfo_pnIntVector]
+	_ifg( _CC_1ST_ARG, b, .error )
+	_ifl( _CC_1ST_ARG, [__OS_HalIntInfo_pnIntVector], .error )
+	
+	set b, _CC_1ST_ARG
+	set a, [b+__OS_IntHandle_nIntNumber]
+	_jump( .end )
+	
+.error
+	set a, 0
+.end
+	_cc_leave()
+	
+	
+	
+	
+	
+	
+	
+:Hal_EnableInterrupts
+	ias _Hal_MasterIntHandler
+	set pc, pop
+	
+:Hal_DisableInterrupts
+	ias 0
+	set pc, pop
+	
+	
+	
+	
+
+#segment bss
+:__OS_HalIntInfo
+:__OS_HalIntInfo_nIntNum			dat 0x000
+:__OS_HalIntInfo_pnIntVector		dat 0x000
+:__OS_HalIntInfoEnd
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

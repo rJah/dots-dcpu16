@@ -1,0 +1,101 @@
+; --------------------------------------------
+; Title:   CoreRawMalloc
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;
+;		Public Interface
+;
+;	RawMallocM		-		void* RawMalloc(size_t nCount);
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro RawMallocM(nCount) {
+	_scall_1( RawMalloc, nCount )
+}
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; void RawMalloc_Init();
+;;
+;; 	Initializes the RawMalloc 
+;;	location pointer to the start
+;;	of the heap and returns.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:RawMalloc_Init
+	set [__OS_RawMalloc_nWhere], __OS_HeapStart
+	set pc, pop
+	
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;
+;; void* RawMalloc(size_t nCount);
+;;
+;;	if(!nCount) return __OS_RawMalloc_nWhere;
+;;	if(!__OS_RawMalloc_nWhere) return 0;
+;; 	else {
+;;		Advance __OS_RawMalloc_nWhere by
+;;		nCount and return old value.
+;;	}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+:RawMalloc
+	_cc_enter(0)
+	
+	; If count == 0 we return the current pointer
+	_ife( _CC_1ST_ARG, 0, .returnWhere )
+	; If current pointer == NULL we return NULL
+	_ife( [__OS_RawMalloc_nWhere], 0 ,.returnNull )
+		
+	set a, [__OS_RawMalloc_nWhere]
+	add [__OS_RawMalloc_nWhere], _CC_1ST_ARG
+	
+	_jump( .end )
+	
+.returnWhere
+	set a, [__OS_RawMalloc_nWhere]
+	_jump( .end )
+	
+.returnNull
+	set a, NULL
+	_jump( .end )
+
+.end
+	_cc_leave()
+
+
+#segment bss
+
+; uint8_t* __RawMalloc_nWhere;
+:__OS_RawMalloc_nWhere	dat 0x000
+
+
+
+#segment heap
+:__OS_HeapStart
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

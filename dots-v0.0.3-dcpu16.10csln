@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<solution>
+  <name>dots-v0.0.3-dcpu16</name>
+  <properties>
+    <property name="emuLoad.projectName">Core</property>
+    <property name="emuLoadMode">project</property>
+  </properties>
+  <projects>
+    <project path="Core\Core.10cproj" />
+    <project path="StackCall\StackCall.10cproj" />
+    <project path="Std\Std.10cproj" />
+    <project path="Hal\Hal.10cproj" />
+    <project path="InitProc\InitProc.10cproj" />
+  </projects>
+</solution>

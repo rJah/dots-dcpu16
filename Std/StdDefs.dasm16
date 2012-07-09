@@ -1,0 +1,169 @@
+; --------------------------------------------
+; Title:   StdDefs
+; Author:  rJah
+; Date:    04/07/2012
+; Version: 
+; --------------------------------------------
+
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; This file defines commonly used macros, mainly shorthand
+; for comparison.
+; Macros in this file must not change any registers or 
+; memory locations that are not part of the parameter list,
+; except for PC.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+; Defines a NULL pointer, used for comparing addresses
+#define NULL						0
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Compariosn shorthand
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Compares 'left' to 'right' and jumps to 'dest' if equal
+#macro _ife(left, right, dest) {
+	ife left, right
+	set pc, dest
+}
+
+; Compares 'left' to 'right' and jumps to 'dest' if not equal
+#macro _ifn(left, right, dest) {
+	ifn left, right
+	set pc, dest
+}
+
+; Compares 'left' to 'right' and jumps to 'dest' if 'left'
+; is less than right
+#macro _ifl(left, right, dest) {
+	ifl left, right
+	set pc, dest
+}
+
+; Compares 'left' to 'right' and jumps to 'dest' if 'left'
+; is greater than right
+#macro _ifg(left, right, dest) {
+	ifg left, right
+	set pc, dest
+}
+
+; Compares 'left' to 'right' and jumps to 'dest' if 'left'
+; is less than or equal to 'right'
+#macro _ifle(left, right, dest) {
+	ifl left, right
+	set pc, dest
+	ife left, right
+	set pc, dest
+}
+
+; Compares 'left' to 'right' and jumps to 'dest' if 'left'
+; is greater than or equal to 'right'
+#macro _ifge(left, right, dest) {
+	ifg left, right
+	set pc, dest
+	ife left, right
+	set pc, dest
+}
+
+
+; Compares 'left' to zero/NULL and jumps to 'dest' if 
+; they are equal
+#macro _ifz(left, dest) {
+	ife left, 0
+	set pc, dest
+}
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+
+
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Converts a digit to a char in base 'base' and stores
+; it in 'dest'. 'dest' is set to zero on error.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro _digitToChar(n, base, dest) {
+	ifg base, 36
+	set pc, __dtc_error
+	set dest, 0
+	ifl n, base	
+	set pc, __dtc_check_A
+	set pc, __dtc_error
+:__dtc_check_A
+	set dest, n
+	add dest, 48		; '0'
+	ifg n, 9
+	add dest, (97-48)-10; 'a' - '0' - 10
+	set pc, __dtc_end
+:__dtc_error
+	set dest, 0
+:__dtc_end
+}
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+; Converts a char to a digit in base 'base' and stores
+; it in 'dest'. 'err' is set to non-zero on error.
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+#macro _charToDigit(ch, base, dest, err) {
+	set dest, 0
+	set err, 0
+	ifg base, 36
+	set pc, __ctd_error
+	ifl ch, 48 			; < '0'
+	set pc, __ctd_error
+	ifg ch, 122			; > 'z'
+	set pc, __ctd_error
+	ifg ch, 57			; > '0'
+	set pc, __ctd_checkA
+	
+	; convert '0' - '9'
+	set dest, ch
+	sub dest, 48
+	set err, 0
+	set pc, __ctd_end
+
+:__ctd_checkA
+	ifl ch, 97			; < 'a'
+	set pc, __ctd_error
+
+:__ctd_doA
+	; convert 'a' - 'z'
+	set dest, ch
+	sub dest, (97-10)
+	set err, 0
+	set pc, __ctd_end
+	
+:__ctd_error
+	set dest, 0
+	set err, 1
+:__ctd_end
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
